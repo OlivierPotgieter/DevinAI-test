@@ -1,13 +1,12 @@
+import argparse
 import os
 from typing import List, Tuple
 
-from dotenv import load_dotenv
 import requests
-import argparse
-
-from logger_utils import log_call
-from llm_service import get_service
+from dotenv import load_dotenv
 from email_utils import condense_repetitive_messages
+from llm_service import get_service
+from logger_utils import log_call
 
 load_dotenv()
 
@@ -51,7 +50,9 @@ def ask_mail_insights(question: str, email_text: str) -> str:
     return answer
 
 
-def summarize_with_chunking(question: str, email_text: str, chunk_tokens: int = 3000) -> str:
+def summarize_with_chunking(
+    question: str, email_text: str, chunk_tokens: int = 3000
+) -> str:
     """Summarize large email sets by chunking the text if needed."""
     words = email_text.split()
     if len(words) <= chunk_tokens:

@@ -13,9 +13,13 @@ sys.modules.setdefault("dotenv", dotenv_stub)
 google_stub = types.ModuleType("google")
 oauth2_stub = types.ModuleType("oauth2")
 creds_stub = types.ModuleType("credentials")
+
+
 class Credentials:
     def __init__(self, *a, **k):
         pass
+
+
 creds_stub.Credentials = Credentials
 oauth2_stub.credentials = creds_stub
 google_stub.oauth2 = oauth2_stub
@@ -31,6 +35,7 @@ sys.modules.setdefault("googleapiclient.discovery", discovery_stub)
 
 import workspace_mcp_server as server
 
+
 class TestWorkspaceMcpServer(unittest.TestCase):
     def setUp(self):
         self.patcher = patch.object(server, "gmail_service")
@@ -42,11 +47,15 @@ class TestWorkspaceMcpServer(unittest.TestCase):
         self.mock_service.users.return_value = mock_users
 
         mock_labels = MagicMock()
-        mock_labels.list.return_value.execute.return_value = {"labels": [{"id": "INBOX", "name": "Inbox"}]}
+        mock_labels.list.return_value.execute.return_value = {
+            "labels": [{"id": "INBOX", "name": "Inbox"}]
+        }
         mock_users.labels.return_value = mock_labels
 
         mock_messages = MagicMock()
-        mock_messages.list.return_value.execute.return_value = {"messages": [{"id": "1"}]}
+        mock_messages.list.return_value.execute.return_value = {
+            "messages": [{"id": "1"}]
+        }
         msg_data = {
             "id": "1",
             "labelIds": ["INBOX"],
@@ -80,7 +89,10 @@ class TestWorkspaceMcpServer(unittest.TestCase):
         self.cal_patcher.stop()
 
     def test_list_recent_emails_returns_raw_messages(self):
-        payload = {"name": "list_recent_emails", "arguments": {"query": "test", "max_results": 1}}
+        payload = {
+            "name": "list_recent_emails",
+            "arguments": {"query": "test", "max_results": 1},
+        }
         resp = asyncio.run(server.call_tool(payload))
         self.assertIn("messages", resp)
         self.assertEqual(resp["messages"][0]["id"], "1")
@@ -105,10 +117,16 @@ class TestWorkspaceMcpServer(unittest.TestCase):
         self.assertEqual(resp["text"], "Event created.")
 
     def test_check_day_availability_free(self):
-        self.mock_calendar.events.return_value.list.return_value.execute.return_value = {"items": []}
-        payload = {"name": "check_day_availability", "arguments": {"date": "2025-05-19"}}
+        self.mock_calendar.events.return_value.list.return_value.execute.return_value = {
+            "items": []
+        }
+        payload = {
+            "name": "check_day_availability",
+            "arguments": {"date": "2025-05-19"},
+        }
         resp = asyncio.run(server.call_tool(payload))
         self.assertEqual(resp["text"], "Free all day")
+
 
 if __name__ == "__main__":
     unittest.main()

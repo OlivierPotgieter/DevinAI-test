@@ -1,9 +1,11 @@
+import importlib
 import json
 import os
 import tempfile
-import importlib
 import unittest
+
 import logger_utils
+
 
 class TestLoggerUtils(unittest.TestCase):
     def setUp(self):
@@ -34,6 +36,7 @@ class TestLoggerUtils(unittest.TestCase):
         self.assertEqual(data["request"]["token"], "[REDACTED]")
         self.assertIn("timestamp", data)
         self.assertIn("module", data)
+
 
 if __name__ == "__main__":
     unittest.main()

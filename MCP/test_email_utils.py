@@ -1,5 +1,7 @@
 import unittest
+
 from email_utils import condense_repetitive_messages
+
 
 class TestEmailUtils(unittest.TestCase):
     def test_condense_repetitive_messages(self):
@@ -15,5 +17,7 @@ class TestEmailUtils(unittest.TestCase):
         self.assertIn("(x2)", out)
         # Unique subjects preserved
         self.assertIn("Subject: Update", out)
+
+
 if __name__ == "__main__":
     unittest.main()

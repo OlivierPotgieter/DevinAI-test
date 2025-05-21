@@ -1,15 +1,15 @@
 import csv
 import os
+import pydoc
 import subprocess
 import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-import pydoc
-import requests
 
+import requests
 from dotenv import load_dotenv
-from logger_utils import log_call
 from llm_service import get_service
+from logger_utils import log_call
 
 MCP_DIR = Path(__file__).parent
 
@@ -213,7 +213,9 @@ def test_credentials() -> None:
     creds = Credentials(
         token=os.environ.get("GOOGLE_ACCESS_TOKEN"),
         refresh_token=os.environ.get("GOOGLE_REFRESH_TOKEN"),
-        token_uri=os.environ.get("GOOGLE_TOKEN_URI", "https://oauth2.googleapis.com/token"),
+        token_uri=os.environ.get(
+            "GOOGLE_TOKEN_URI", "https://oauth2.googleapis.com/token"
+        ),
         client_id=os.environ.get("GOOGLE_CLIENT_ID"),
         client_secret=os.environ.get("GOOGLE_CLIENT_SECRET"),
         scopes=scopes,
@@ -231,7 +233,9 @@ def main() -> None:
     """Start the server and present the interactive menu."""
     output_lines: list[str] = []
     server_proc = start_server()
-    t = threading.Thread(target=stream_output, args=(server_proc, output_lines), daemon=True)
+    t = threading.Thread(
+        target=stream_output, args=(server_proc, output_lines), daemon=True
+    )
     t.start()
 
     while True:
