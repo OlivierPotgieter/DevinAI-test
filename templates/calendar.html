@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}DevinAI Workspace Hub - Calendar{% endblock %}
+
+{% block additional_styles %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.css">
+<style>
+    #calendar {
+        height: 600px;
+    }
+    .fc-event {
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card shadow">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">Calendar</h3>
+        <div>
+            <a href="{{ url_for('create_event') }}" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
+                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                </svg>
+                Create Event
+            </a>
+            <a href="{{ url_for('check_availability') }}" class="btn btn-outline-primary ms-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clock" viewBox="0 0 16 16">
+                    <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                </svg>
+                Check Availability
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div id="calendar"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.10.1/main.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('calendar');
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: function(info, successCallback, failureCallback) {
+                fetch('/api/list_events')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            failureCallback(data.error);
+                            return;
+                        }
+                        
+                        const events = [];
+                        if (data.events) {
+                            data.events.forEach(event => {
+                                const start = event.start.dateTime || event.start.date;
+                                const end = event.end.dateTime || event.end.date;
+                                
+                                events.push({
+                                    title: event.summary || '(No title)',
+                                    start: start,
+                                    end: end,
+                                    id: event.id,
+                                    extendedProps: {
+                                        description: event.description || '',
+                                        location: event.location || '',
+                                        creator: event.creator ? event.creator.email : '',
+                                        attendees: event.attendees || []
+                                    }
+                                });
+                            });
+                        }
+                        
+                        successCallback(events);
+                    })
+                    .catch(error => {
+                        failureCallback(error);
+                    });
+            },
+            eventClick: function(info) {
+                // Show event details
+                let attendeesList = '';
+                if (info.event.extendedProps.attendees && info.event.extendedProps.attendees.length > 0) {
+                    attendeesList = '<h6>Attendees:</h6><ul>';
+                    info.event.extendedProps.attendees.forEach(attendee => {
+                        attendeesList += `<li>${attendee.email}</li>`;
+                    });
+                    attendeesList += '</ul>';
+                }
+                
+                let content = `
+                    <div class="modal fade" id="eventModal" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">${info.event.title}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p><strong>Start:</strong> ${new Date(info.event.start).toLocaleString()}</p>
+                                    <p><strong>End:</strong> ${new Date(info.event.end || info.event.start).toLocaleString()}</p>
+                                    ${info.event.extendedProps.location ? `<p><strong>Location:</strong> ${info.event.extendedProps.location}</p>` : ''}
+                                    ${info.event.extendedProps.description ? `<p><strong>Description:</strong> ${info.event.extendedProps.description}</p>` : ''}
+                                    ${info.event.extendedProps.creator ? `<p><strong>Organizer:</strong> ${info.event.extendedProps.creator}</p>` : ''}
+                                    ${attendeesList}
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Remove any existing modal
+                const existingModal = document.getElementById('eventModal');
+                if (existingModal) {
+                    existingModal.remove();
+                }
+                
+                // Add the modal to the DOM
+                document.body.insertAdjacentHTML('beforeend', content);
+                
+                // Show the modal
+                const eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
+                eventModal.show();
+            }
+        });
+        
+        calendar.render();
+    });
+</script>
+{% endblock %}

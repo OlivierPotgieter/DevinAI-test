@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}DevinAI Workspace Hub - Create Event{% endblock %}
+
+{% block content %}
+<div class="card shadow">
+    <div class="card-header">
+        <h3 class="mb-0">Create Calendar Event</h3>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('create_event') }}">
+            <div class="mb-3">
+                <label for="summary" class="form-label">Event Title</label>
+                <input type="text" class="form-control" id="summary" name="summary" required>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <input type="date" class="form-control date-picker" id="start_date" name="start_date" required>
+                </div>
+                <div class="col-md-6">
+                    <label for="start_time" class="form-label">Start Time</label>
+                    <input type="time" class="form-control time-picker" id="start_time" name="start_time" required>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="end_date" class="form-label">End Date (optional, uses start date if empty)</label>
+                    <input type="date" class="form-control date-picker" id="end_date" name="end_date">
+                </div>
+                <div class="col-md-6">
+                    <label for="end_time" class="form-label">End Time</label>
+                    <input type="time" class="form-control time-picker" id="end_time" name="end_time" required>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="attendees" class="form-label">Attendees (comma separated emails, optional)</label>
+                <input type="text" class="form-control" id="attendees" name="attendees" placeholder="email1@example.com, email2@example.com">
+            </div>
+            
+            <div class="alert alert-info mb-3">
+                <small><strong>Note:</strong> Events will be created in the +2 timezone.</small>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('calendar') }}" class="btn btn-outline-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">Create Event</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block additional_scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize date pickers
+        flatpickr('.date-picker', {
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'F j, Y',
+        });
+        
+        // Initialize time pickers
+        flatpickr('.time-picker', {
+            enableTime: true,
+            noCalendar: true,
+            dateFormat: 'H:i',
+            time_24hr: true
+        });
+        
+        // Set default values to today
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day}`;
+        
+        document.getElementById('start_date').value = formattedDate;
+        
+        // Set default start time to next hour
+        const nextHour = new Date();
+        nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
+        const startHours = String(nextHour.getHours()).padStart(2, '0');
+        const startMinutes = String(nextHour.getMinutes()).padStart(2, '0');
+        document.getElementById('start_time').value = `${startHours}:${startMinutes}`;
+        
+        // Set default end time to one hour after start time
+        const endTime = new Date(nextHour);
+        endTime.setHours(endTime.getHours() + 1);
+        const endHours = String(endTime.getHours()).padStart(2, '0');
+        const endMinutes = String(endTime.getMinutes()).padStart(2, '0');
+        document.getElementById('end_time').value = `${endHours}:${endMinutes}`;
+    });
+</script>
+{% endblock %}
