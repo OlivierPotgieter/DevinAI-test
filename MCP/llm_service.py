@@ -1,8 +1,9 @@
 """Minimal LLM service layer with provider selection."""
+
 from __future__ import annotations
 
 import os
-from typing import List, Dict
+from typing import Dict, List
 
 try:
     from dotenv import load_dotenv

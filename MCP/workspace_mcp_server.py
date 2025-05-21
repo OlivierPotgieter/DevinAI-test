@@ -4,14 +4,14 @@ import base64
 import os
 from typing import Any, List
 
+import uvicorn
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Body
+from fastapi import Body, FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-import uvicorn
+from logger_utils import log_call, logger
 
-from logger_utils import logger, log_call
 load_dotenv()
 SCOPES = [
     "openid",
@@ -190,7 +190,6 @@ async def call_tool(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
         except Exception as e:
             logger.error(f"Error listing calendar events: {e}")
             response = {"type": "text", "text": f"Unable to access calendar. Please check your credentials. Error: {str(e)}"}
-        
         log_call(name, arguments, response)
         return response
 
@@ -229,7 +228,7 @@ async def call_tool(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
             raise HTTPException(status_code=400, detail="Missing date")
         start_of_day = f"{date}T00:00:00Z"
         end_of_day = f"{date}T23:59:59Z"
-        
+  
         try:
             events_result = calendar_service.events().list(
                 calendarId=calendar_id,
@@ -299,7 +298,6 @@ async def call_tool(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
         log_call(name, arguments, response)
         return response
 
-
     if name == "list_recent_emails":
         query = arguments.get("query", "newer_than:1d")
         label_ids = arguments.get("label_ids") or []
@@ -309,7 +307,11 @@ async def call_tool(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
 
         label_map = {
             lbl["id"]: lbl["name"]
-            for lbl in gmail_service.users().labels().list(userId="me").execute().get("labels", [])
+            for lbl in gmail_service.users()
+            .labels()
+            .list(userId="me")
+            .execute()
+            .get("labels", [])
         }
 
         collected: list[dict[str, str]] = []
@@ -333,7 +335,7 @@ async def call_tool(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
                 fetch_for_label(lid)
         else:
             fetch_for_label(None)
-            
+
         lines: list[str] = []
         for m in collected:
             msg = (
@@ -348,7 +350,9 @@ async def call_tool(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
                 .execute()
             )
             raw_messages.append(msg)
-            headers = {h["name"]: h["value"] for h in msg.get("payload", {}).get("headers", [])}
+            headers = {
+                h["name"]: h["value"] for h in msg.get("payload", {}).get("headers", [])
+            }
             subject = headers.get("Subject", "(no subject)")
             sender = headers.get("From", "(unknown)")
             date_str = headers.get("Date", "(unknown)")
@@ -358,8 +362,17 @@ async def call_tool(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
                 f"Date: {date_str}\nFrom: {sender}\nSubject: {subject}\nLabels: {', '.join(lbl_names)}\n{snippet}"
             )
         text = "\n\n".join(lines) if lines else "No recent emails found."
-        response = {"type": "text", "text": text, "count": len(collected), "messages": raw_messages}
-        log_call(f"{name}_raw", arguments, {"list_results": list_results, "messages": raw_messages})
+        response = {
+            "type": "text",
+            "text": text,
+            "count": len(collected),
+            "messages": raw_messages,
+        }
+        log_call(
+            f"{name}_raw",
+            arguments,
+            {"list_results": list_results, "messages": raw_messages},
+        )
         log_call(name, arguments, response)
         return response
 
