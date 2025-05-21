@@ -157,7 +157,7 @@ def list_next_week_events() -> None:
 
 def format_datetime(date_str: str, time_str: str) -> str:
     """Format date and time strings into ISO format."""
-    return f"{date_str}T{time_str}:00Z"
+    return f"{date_str}T{time_str}:00+02:00"
 
 
 def create_calendar_event() -> None:
@@ -179,8 +179,8 @@ def create_calendar_event() -> None:
     attendees = [a.strip() for a in attendees_str.split(",") if a.strip()]
     
     try:
-        start_dt = datetime.fromisoformat(start.replace("Z", "+00:00"))
-        end_dt = datetime.fromisoformat(end.replace("Z", "+00:00"))
+        start_dt = datetime.fromisoformat(start)
+        end_dt = datetime.fromisoformat(end)
         start_display = start_dt.strftime("%A, %B %d, %Y at %I:%M %p")
         end_display = end_dt.strftime("%I:%M %p") if start_dt.date() == end_dt.date() else end_dt.strftime("%A, %B %d, %Y at %I:%M %p")
     except ValueError:
