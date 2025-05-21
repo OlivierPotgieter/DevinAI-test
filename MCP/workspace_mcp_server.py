@@ -176,17 +176,20 @@ async def call_tool(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
             kwargs["timeMin"] = time_min
         if time_max:
             kwargs["timeMax"] = time_max
-        events_result = calendar_service.events().list(**kwargs).execute()
-        events = events_result.get("items", [])
-        lines = []
-        for event in events:
-            start = event.get("start", {}).get(
-                "dateTime", event.get("start", {}).get("date", "")
-            )
-            summary = event.get("summary", "(no title)")
-            lines.append(f"{start} {summary}")
-        text = "\n".join(lines) if lines else "No events found."
-        response = {"type": "text", "text": text, "events": events}
+        
+        try:
+            events_result = calendar_service.events().list(**kwargs).execute()
+            events = events_result.get("items", [])
+            lines = []
+            for event in events:
+                start = event.get("start", {}).get("dateTime", event.get("start", {}).get("date", ""))
+                summary = event.get("summary", "(no title)")
+                lines.append(f"{start} {summary}")
+            text = "\n".join(lines) if lines else "No events found."
+            response = {"type": "text", "text": text, "events": events}
+        except Exception as e:
+            logger.error(f"Error listing calendar events: {e}")
+            response = {"type": "text", "text": f"Unable to access calendar. Please check your credentials. Error: {str(e)}"}
         log_call(name, arguments, response)
         return response
 
@@ -207,12 +210,14 @@ async def call_tool(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
         }
         if attendees:
             body["attendees"] = [{"email": a} for a in attendees]
-        created = (
-            calendar_service.events()
-            .insert(calendarId=calendar_id, body=body)
-            .execute()
-        )
-        response = {"type": "text", "text": "Event created.", "id": created.get("id")}
+        
+        try:
+            created = calendar_service.events().insert(calendarId=calendar_id, body=body).execute()
+            response = {"type": "text", "text": "Event created.", "id": created.get("id")}
+        except Exception as e:
+            logger.error(f"Error creating calendar event: {e}")
+            response = {"type": "text", "text": f"Unable to create calendar event. Please check your credentials. Error: {str(e)}"}
+        
         log_call(name, arguments, response)
         return response
 
@@ -223,54 +228,73 @@ async def call_tool(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
             raise HTTPException(status_code=400, detail="Missing date")
         start_of_day = f"{date}T00:00:00Z"
         end_of_day = f"{date}T23:59:59Z"
-        events_result = (
-            calendar_service.events()
-            .list(
+  
+        try:
+            events_result = calendar_service.events().list(
                 calendarId=calendar_id,
                 timeMin=start_of_day,
                 timeMax=end_of_day,
                 singleEvents=True,
                 orderBy="startTime",
-            )
-            .execute()
-        )
-        events = events_result.get("items", [])
-        if not events:
-            response = {"type": "text", "text": "Free all day"}
-            log_call(name, arguments, response)
-            return response
+            ).execute()
+            events = events_result.get("items", [])
+            
+            if not events:
+                response = {"type": "text", "text": "You are free all day on " + date}
+                log_call(name, arguments, response)
+                return response
 
-        # compute free slots between events
-        from datetime import datetime
+            # compute free slots between events
+            from datetime import datetime
 
-        fmt = "%Y-%m-%dT%H:%M:%S%z"
-        parsed = []
-        for ev in events:
-            s = ev.get("start", {}).get(
-                "dateTime", ev.get("start", {}).get("date") + "T00:00:00Z"
-            )
-            e = ev.get("end", {}).get(
-                "dateTime", ev.get("end", {}).get("date") + "T00:00:00Z"
-            )
-            parsed.append(
-                (
-                    datetime.fromisoformat(s.replace("Z", "+00:00")),
-                    datetime.fromisoformat(e.replace("Z", "+00:00")),
-                )
-            )
-        parsed.sort(key=lambda t: t[0])
-        day_start = datetime.fromisoformat(start_of_day.replace("Z", "+00:00"))
-        day_end = datetime.fromisoformat(end_of_day.replace("Z", "+00:00"))
-        free: list[str] = []
-        cur = day_start
-        for s, e in parsed:
-            if s > cur:
-                free.append(f"{cur.isoformat()} - {s.isoformat()}")
-            cur = max(cur, e)
-        if cur < day_end:
-            free.append(f"{cur.isoformat()} - {day_end.isoformat()}")
-        text = "\n".join(free) if free else "No free time"
-        response = {"type": "text", "text": text}
+            fmt = "%Y-%m-%dT%H:%M:%S%z"
+            parsed = []
+            for ev in events:
+                s = ev.get("start", {}).get("dateTime", ev.get("start", {}).get("date") + "T00:00:00Z")
+                e = ev.get("end", {}).get("dateTime", ev.get("end", {}).get("date") + "T00:00:00Z")
+                parsed.append((datetime.fromisoformat(s.replace("Z", "+00:00")), datetime.fromisoformat(e.replace("Z", "+00:00")), ev.get("summary", "(No title)")))
+            parsed.sort(key=lambda t: t[0])
+            day_start = datetime.fromisoformat(start_of_day.replace("Z", "+00:00"))
+            day_end = datetime.fromisoformat(end_of_day.replace("Z", "+00:00"))
+            
+            scheduled_events = []
+            for start, end, summary in parsed:
+                start_str = start.strftime("%I:%M %p")
+                end_str = end.strftime("%I:%M %p")
+                scheduled_events.append(f"{start_str} - {end_str}: {summary}")
+            
+            free_slots = []
+            cur = day_start
+            for s, e, _ in parsed:
+                if s > cur:
+                    start_str = cur.strftime("%I:%M %p")
+                    end_str = s.strftime("%I:%M %p")
+                    free_slots.append(f"{start_str} - {end_str}")
+                cur = max(cur, e)
+            if cur < day_end:
+                start_str = cur.strftime("%I:%M %p")
+                end_str = day_end.strftime("%I:%M %p")
+                free_slots.append(f"{start_str} - {end_str}")
+            
+            formatted_date = datetime.fromisoformat(date).strftime("%A, %B %d, %Y")
+            text = f"Schedule for {formatted_date}:\n\n"
+            text += "Scheduled Events:\n"
+            if scheduled_events:
+                text += "\n".join(scheduled_events)
+            else:
+                text += "No scheduled events\n"
+            
+            text += "\n\nAvailable Time Slots:\n"
+            if free_slots:
+                text += "\n".join(free_slots)
+            else:
+                text += "No free time available"
+            
+            response = {"type": "text", "text": text}
+        except Exception as e:
+            logger.error(f"Error checking day availability: {e}")
+            response = {"type": "text", "text": f"Unable to check calendar availability. Please check your credentials. Error: {str(e)}"}
+        
         log_call(name, arguments, response)
         return response
 
