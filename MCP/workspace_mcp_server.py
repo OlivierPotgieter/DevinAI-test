@@ -226,7 +226,7 @@ async def call_tool(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
         ).execute()
         events = events_result.get("items", [])
         if not events:
-            response = {"type": "text", "text": "Free all day"}
+            response = {"type": "text", "text": "You are free all day on " + date}
             log_call(name, arguments, response)
             return response
 
@@ -238,19 +238,44 @@ async def call_tool(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
         for ev in events:
             s = ev.get("start", {}).get("dateTime", ev.get("start", {}).get("date") + "T00:00:00Z")
             e = ev.get("end", {}).get("dateTime", ev.get("end", {}).get("date") + "T00:00:00Z")
-            parsed.append((datetime.fromisoformat(s.replace("Z", "+00:00")), datetime.fromisoformat(e.replace("Z", "+00:00"))))
+            parsed.append((datetime.fromisoformat(s.replace("Z", "+00:00")), datetime.fromisoformat(e.replace("Z", "+00:00")), ev.get("summary", "(No title)")))
         parsed.sort(key=lambda t: t[0])
         day_start = datetime.fromisoformat(start_of_day.replace("Z", "+00:00"))
         day_end = datetime.fromisoformat(end_of_day.replace("Z", "+00:00"))
-        free: list[str] = []
+        
+        scheduled_events = []
+        for start, end, summary in parsed:
+            start_str = start.strftime("%I:%M %p")
+            end_str = end.strftime("%I:%M %p")
+            scheduled_events.append(f"{start_str} - {end_str}: {summary}")
+        
+        free_slots = []
         cur = day_start
-        for s, e in parsed:
+        for s, e, _ in parsed:
             if s > cur:
-                free.append(f"{cur.isoformat()} - {s.isoformat()}")
+                start_str = cur.strftime("%I:%M %p")
+                end_str = s.strftime("%I:%M %p")
+                free_slots.append(f"{start_str} - {end_str}")
             cur = max(cur, e)
         if cur < day_end:
-            free.append(f"{cur.isoformat()} - {day_end.isoformat()}")
-        text = "\n".join(free) if free else "No free time"
+            start_str = cur.strftime("%I:%M %p")
+            end_str = day_end.strftime("%I:%M %p")
+            free_slots.append(f"{start_str} - {end_str}")
+        
+        formatted_date = datetime.fromisoformat(date).strftime("%A, %B %d, %Y")
+        text = f"Schedule for {formatted_date}:\n\n"
+        text += "Scheduled Events:\n"
+        if scheduled_events:
+            text += "\n".join(scheduled_events)
+        else:
+            text += "No scheduled events\n"
+        
+        text += "\n\nAvailable Time Slots:\n"
+        if free_slots:
+            text += "\n".join(free_slots)
+        else:
+            text += "No free time available"
+        
         response = {"type": "text", "text": text}
         log_call(name, arguments, response)
         return response
