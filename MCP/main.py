@@ -191,6 +191,30 @@ def create_calendar_event() -> None:
     
     attendees_str = input("Attendee emails (comma separated, optional): ").strip()
     attendees = [a.strip() for a in attendees_str.split(",") if a.strip()]
+    
+    try:
+        start_dt = datetime.fromisoformat(start.replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(end.replace("Z", "+00:00"))
+        start_display = start_dt.strftime("%A, %B %d, %Y at %I:%M %p")
+        end_display = end_dt.strftime("%I:%M %p") if start_dt.date() == end_dt.date() else end_dt.strftime("%A, %B %d, %Y at %I:%M %p")
+    except ValueError:
+        start_display = start
+        end_display = end
+    
+    print("\nEvent Details:")
+    print(f"Title: {summary}")
+    print(f"Start: {start_display}")
+    print(f"End: {end_display}")
+    if attendees:
+        print(f"Attendees: {', '.join(attendees)}")
+    else:
+        print("Attendees: None")
+    
+    confirm = input("\nCreate this event? (y/n): ").strip().lower()
+    if confirm != 'y' and confirm != 'yes':
+        print("Event creation cancelled.")
+        return
+    
     url = f"{SERVER_URL}/call_tool"
     payload = {
         "name": "create_calendar_event",
