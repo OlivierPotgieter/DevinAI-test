@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block title %}MCP POC - Summarize Emails{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-5">
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h3 class="mb-0">Summarize Recent Emails</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('summarize_emails') }}">
+                    <div class="mb-3">
+                        <label for="query" class="form-label">Email Query</label>
+                        <input type="text" class="form-control" id="query" name="query" value="newer_than:7d" required>
+                        <small class="text-muted">Examples: "newer_than:7d", "is:important", "from:example.com"</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="question" class="form-label">Question or Summary Request</label>
+                        <textarea class="form-control" id="question" name="question" rows="3" required>Summarize the last week's emails with important highlights and stats.</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="max_results" class="form-label">Maximum Results</label>
+                        <input type="number" class="form-control" id="max_results" name="max_results" value="10" min="1" max="50">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">Generate Summary</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-7">
+        {% if summary %}
+        <div class="card shadow">
+            <div class="card-header">
+                <h3 class="mb-0">Email Summary</h3>
+            </div>
+            <div class="card-body">
+                <div class="email-summary">
+                    {{ summary|nl2br }}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card shadow">
+            <div class="card-body text-center py-5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-envelope text-muted mb-3" viewBox="0 0 16 16">
+                    <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V4Zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1H2Zm13 2.383-4.708 2.825L15 11.105V5.383Zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741ZM1 11.105l4.708-2.897L1 5.383v5.722Z"/>
+                </svg>
+                <h4 class="text-muted">No Summary Generated Yet</h4>
+                <p class="text-muted">Fill out the form to generate an email summary.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

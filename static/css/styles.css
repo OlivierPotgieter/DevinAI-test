@@ -63,6 +63,42 @@ body {
     line-height: 1.5;
 }
 
+.email-summary {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    white-space: pre-wrap;
+    font-family: 'Georgia', serif;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.console-output {
+    background-color: #212529;
+    color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    max-height: 300px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+}
+
+.log-json {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 0.8rem;
+}
+
+.form-switch .form-check-input {
+    width: 2.5em;
+    height: 1.25em;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .card-header {

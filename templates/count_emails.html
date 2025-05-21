@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}MCP POC - Count Emails by Label{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-5">
+        <div class="card shadow mb-4">
+            <div class="card-header">
+                <h3 class="mb-0">Count Emails by Label</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('count_emails') }}">
+                    <div class="mb-3">
+                        <label for="label_id" class="form-label">Select Label</label>
+                        <select class="form-select" id="label_id" name="label_id" required>
+                            <option value="" selected disabled>Choose a label...</option>
+                            {% for label in labels %}
+                            <option value="{{ label.id }}">{{ label.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary w-100">Count Emails</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-7">
+        {% if count_result %}
+        <div class="card shadow">
+            <div class="card-header">
+                <h3 class="mb-0">Count Results</h3>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <div class="display-1 fw-bold text-primary mb-3">{{ count_result.count }}</div>
+                    <p class="lead">emails with label "{{ count_result.label_name }}"</p>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card shadow">
+            <div class="card-body text-center py-5">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-tag text-muted mb-3" viewBox="0 0 16 16">
+                    <path d="M6 4.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm-1 0a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0z"/>
+                    <path d="M2 1h4.586a1 1 0 0 1 .707.293l7 7a1 1 0 0 1 0 1.414l-4.586 4.586a1 1 0 0 1-1.414 0l-7-7A1 1 0 0 1 1 6.586V2a1 1 0 0 1 1-1zm0 5.586 7 7L13.586 9l-7-7H2v4.586z"/>
+                </svg>
+                <h4 class="text-muted">Select a Label to Count</h4>
+                <p class="text-muted">Choose a label to see how many emails have that label.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
