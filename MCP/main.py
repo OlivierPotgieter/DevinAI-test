@@ -155,39 +155,25 @@ def list_next_week_events() -> None:
         print(f"Request failed: {exc}")
 
 
-def parse_datetime_with_llm(input_text: str) -> str:
-    """Convert natural language datetime to ISO format using LLM."""
-    if input_text.count("T") == 1 and input_text.count("-") >= 2:
-        return input_text
-        
-    llm_service = get_service()
-    messages = [
-        {"role": "system", "content": "You are a helpful assistant that converts natural language datetime descriptions to ISO-8601 format. Respond with ONLY the ISO string."},
-        {"role": "user", "content": f"Convert the following datetime to ISO-8601 format with timezone: {input_text}. Only respond with the ISO string, nothing else."}
-    ]
-    
-    try:
-        iso_datetime = llm_service.chat(messages)
-        iso_datetime = iso_datetime.strip().strip('"').strip("'")
-        
-        if "Z" not in iso_datetime and "+" not in iso_datetime and "-" not in iso_datetime[-6:]:
-            iso_datetime += "Z"
-            
-        return iso_datetime
-    except Exception as e:
-        print(f"Error parsing datetime: {e}")
-        print("Please enter the datetime in ISO format (e.g., 2025-05-21T14:00:00Z)")
-        return input("ISO datetime: ").strip()
+def format_datetime(date_str: str, time_str: str) -> str:
+    """Format date and time strings into ISO format."""
+    return f"{date_str}T{time_str}:00Z"
 
 
 def create_calendar_event() -> None:
     """Interactively create a calendar event."""
     summary = input("Event summary: ").strip()
-    start_input = input("Start datetime (natural language or ISO): ").strip()
-    end_input = input("End datetime (natural language or ISO): ").strip()
     
-    start = parse_datetime_with_llm(start_input)
-    end = parse_datetime_with_llm(end_input)
+    start_date = input("Start date (YYYY-MM-DD): ").strip()
+    start_time = input("Start time (HH:MM): ").strip()
+    
+    end_date = input("End date (YYYY-MM-DD, press Enter to use same as start): ").strip()
+    if not end_date:
+        end_date = start_date
+    end_time = input("End time (HH:MM): ").strip()
+    
+    start = format_datetime(start_date, start_time)
+    end = format_datetime(end_date, end_time)
     
     attendees_str = input("Attendee emails (comma separated, optional): ").strip()
     attendees = [a.strip() for a in attendees_str.split(",") if a.strip()]

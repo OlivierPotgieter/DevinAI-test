@@ -250,8 +250,21 @@ async def call_tool(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
             fmt = "%Y-%m-%dT%H:%M:%S%z"
             parsed = []
             for ev in events:
-                s = ev.get("start", {}).get("dateTime", ev.get("start", {}).get("date") + "T00:00:00Z")
-                e = ev.get("end", {}).get("dateTime", ev.get("end", {}).get("date") + "T00:00:00Z")
+                start_date = ev.get("start", {}).get("date")
+                end_date = ev.get("end", {}).get("date")
+                
+                s = ev.get("start", {}).get("dateTime")
+                if not s and start_date:
+                    s = start_date + "T00:00:00Z"
+                elif not s:
+                    s = start_of_day
+                    
+                e = ev.get("end", {}).get("dateTime")
+                if not e and end_date:
+                    e = end_date + "T00:00:00Z"
+                elif not e:
+                    e = end_of_day
+                    
                 parsed.append((datetime.fromisoformat(s.replace("Z", "+00:00")), datetime.fromisoformat(e.replace("Z", "+00:00")), ev.get("summary", "(No title)")))
             parsed.sort(key=lambda t: t[0])
             day_start = datetime.fromisoformat(start_of_day.replace("Z", "+00:00"))
