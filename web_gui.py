@@ -375,6 +375,43 @@ def nl2br(value):
         return value.replace('\n', '<br>')
     return value
 
+@app.template_filter('format_email')
+def format_email(text):
+    """Format email content with enhanced styling.
+    - Properly formats paragraphs with spacing
+    - Handles bullet points and numbered lists
+    - Highlights important information
+    - Formats headings with proper styling
+    """
+    if not text:
+        return ""
+    
+    import re
+    from markupsafe import escape
+    
+    text = escape(text)
+    
+    text = re.sub(r'^(#{1,3})\s+(.+)$', r'<h\1 style="color: #0066cc; margin-top: 1em;">\2</h\1>', text, flags=re.MULTILINE)
+    
+    text = re.sub(r'^[-*]\s+(.+)$', r'<li>\1</li>', text, flags=re.MULTILINE)
+    
+    text = re.sub(r'^\d+\.\s+(.+)$', r'<li>\1</li>', text, flags=re.MULTILINE)
+    
+    text = re.sub(r'(<li>.+</li>\n)+', r'<ul>\n\g<0></ul>', text)
+    
+    text = re.sub(r'\*\*(.+?)\*\*', r'<strong style="color: #cc0000;">\1</strong>', text)
+    text = re.sub(r'__(.+?)__', r'<strong style="color: #cc0000;">\1</strong>', text)
+    
+    paragraphs = text.split('\n\n')
+    formatted_paragraphs = []
+    
+    for p in paragraphs:
+        if not p.startswith('<ul>') and not p.startswith('<h'):
+            p = f'<p>{p.replace(chr(10), "<br>")}</p>'
+        formatted_paragraphs.append(p)
+    
+    return '\n'.join(formatted_paragraphs)
+
 if __name__ == '__main__':
     os.makedirs('templates', exist_ok=True)
     os.makedirs('static/css', exist_ok=True)
