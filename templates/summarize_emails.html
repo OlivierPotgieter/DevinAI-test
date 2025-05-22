@@ -41,7 +41,7 @@
             </div>
             <div class="card-body">
                 <div class="email-summary">
-                    {{ summary|nl2br }}
+                    {{ summary|format_email|safe }}
                 </div>
             </div>
         </div>
