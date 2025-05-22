@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}MCP POC - Manage Labels{% endblock %}
+
+{% block content %}
+<div class="card shadow">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">Manage Gmail Labels</h3>
+        <form method="POST" action="{{ url_for('manage_labels') }}" class="d-inline">
+            <input type="hidden" name="sync_labels" value="true">
+            <button type="submit" class="btn btn-outline-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-repeat" viewBox="0 0 16 16">
+                    <path d="M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z"/>
+                    <path fill-rule="evenodd" d="M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z"/>
+                </svg>
+                Sync Labels
+            </button>
+        </form>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-4">Mark labels as important to include them in email summaries. Important labels will be prioritized when fetching emails.</p>
+        
+        {% if labels %}
+        <form method="POST" action="{{ url_for('manage_labels') }}">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Label Name</th>
+                            <th>Label ID</th>
+                            <th class="text-center">Important</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for label in labels %}
+                        <tr>
+                            <td>{{ label.name }}</td>
+                            <td><code>{{ label.id }}</code></td>
+                            <td class="text-center">
+                                <div class="form-check form-switch d-flex justify-content-center">
+                                    <input class="form-check-input" type="checkbox" id="important_{{ label.id }}" name="important_{{ label.id }}" {% if label.important == "True" %}checked{% endif %}>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+        {% else %}
+        <div class="text-center py-5">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-tags text-muted mb-3" viewBox="0 0 16 16">
+                <path d="M3 2v4.586l7 7L14.586 9l-7-7H3zM2 2a1 1 0 0 1 1-1h4.586a1 1 0 0 1 .707.293l7 7a1 1 0 0 1 0 1.414l-4.586 4.586a1 1 0 0 1-1.414 0l-7-7A1 1 0 0 1 1 6.586V2a1 1 0 0 1 1-1z"/>
+                <path d="M5.5 5a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm0 1a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM1 7.086a1 1 0 0 0 .293.707L8.75 15.25l-.043.043a1 1 0 0 1-1.414 0l-7-7A1 1 0 0 1 0 7.586V3a1 1 0 0 1 1-1v5.086z"/>
+            </svg>
+            <h4 class="text-muted">No Labels Found</h4>
+            <p class="text-muted">Click "Sync Labels" to fetch your Gmail labels.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
