@@ -375,6 +375,48 @@ def nl2br(value):
         return value.replace('\n', '<br>')
     return value
 
+@app.template_filter('format_email')
+def format_email(value):
+    """Format email content with better HTML rendering.
+    
+    This filter:
+    1. Converts newlines to <br> tags
+    2. Formats paragraphs with proper spacing
+    3. Handles bullet points and numbered lists
+    4. Highlights important information
+    """
+    if not value:
+        return ""
+    
+    import re
+    import html
+    
+    text = html.escape(value)
+    
+    text = re.sub(r'\n\s*\n', '</p><p>', text)
+    
+    text = re.sub(r'(?m)^[-*•]\s+(.*?)$', r'<li>\1</li>', text)
+    text = re.sub(r'(?s)<li>.*?</li>', r'<ul>\g<0></ul>', text)
+    
+    text = re.sub(r'(?m)^\d+\.\s+(.*?)$', r'<li>\1</li>', text)
+    text = re.sub(r'(?s)(<li>.*?</li>)', r'<ol>\1</ol>', text)
+    
+    text = re.sub(r'<\/ul>\s*<ul>', '', text)
+    text = re.sub(r'<\/ol>\s*<ol>', '', text)
+    
+    text = re.sub(r'(?i)important:?\s*(.*?)(?=\n|$)', r'<strong class="text-danger">Important: \1</strong>', text)
+    
+    text = re.sub(r'([A-Za-z0-9\s]+):\s*\n', r'<h5>\1:</h5>', text)
+    
+    text = text.replace('\n', '<br>')
+    
+    if not text.startswith('<p>'):
+        text = '<p>' + text
+    if not text.endswith('</p>'):
+        text = text + '</p>'
+    
+    return text
+
 if __name__ == '__main__':
     os.makedirs('templates', exist_ok=True)
     os.makedirs('static/css', exist_ok=True)
